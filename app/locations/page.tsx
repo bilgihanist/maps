@@ -1,18 +1,21 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocationStore } from '../store/useLocationStore'
 import {
   Box,
   Button,
   Container,
   Heading,
-  List,
-  ListItem,
   Text,
-  IconButton,
-  Flex,
   VStack,
-  useDisclosure,
+  HStack,
+  useColorModeValue,
+  Card,
+  CardBody,
+  IconButton,
+  useToast,
   AlertDialog,
   AlertDialogBody,
   AlertDialogFooter,
@@ -20,100 +23,131 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
 } from '@chakra-ui/react'
-import { ChevronRightIcon, DeleteIcon } from '@chakra-ui/icons'
-import { useLocationStore } from '../store/useLocationStore'
-import { useRouter } from 'next/navigation'
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa'
 
 export default function Locations() {
-  const locations = useLocationStore((state) => state.locations)
-  const deleteLocation = useLocationStore((state) => state.deleteLocation)
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
-  const [locationToDelete, setLocationToDelete] = useState<string | null>(null)
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  const cancelRef = useRef(null)
   const router = useRouter()
+  const toast = useToast()
+  const { locations, deleteLocation } = useLocationStore()
+  const [locationToDelete, setLocationToDelete] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const cancelRef = useRef<HTMLButtonElement>(null)
 
-  const handleDelete = (id: string) => {
+  const cardBg = useColorModeValue('white', 'gray.800')
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteLocation(id)
+      toast({
+        title: 'Başarılı',
+        description: 'Konum başarıyla silindi',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      })
+    } catch (error) {
+      toast({
+        title: 'Hata',
+        description: 'Konum silinirken bir hata oluştu',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    }
+  }
+
+  const openDeleteDialog = (id: string) => {
     setLocationToDelete(id)
-    onOpen()
+    setIsDeleteDialogOpen(true)
+  }
+
+  const closeDeleteDialog = () => {
+    setLocationToDelete(null)
+    setIsDeleteDialogOpen(false)
   }
 
   const confirmDelete = () => {
     if (locationToDelete) {
-      deleteLocation(locationToDelete)
-      setLocationToDelete(null)
-      onClose()
+      handleDelete(locationToDelete)
+      closeDeleteDialog()
     }
   }
 
   return (
-    <Container maxW="container.xl" py={10}>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading as="h1" size="xl" color={'white'}>
-          Konumlar
-        </Heading>
-        <Button
-          colorScheme="blue"
-          onClick={() => router.push('/route')}
-        >
-          Rota Göster
-        </Button>
-      </Flex>
+    <Container maxW="container.md" py={8}>
+      <VStack spacing={6} align="stretch">
+        <Box textAlign="center">
+          <Heading size="lg" mb={2}>Konumlar</Heading>
+          <Text color="gray.500">Tüm konumlarınızı buradan yönetebilirsiniz</Text>
+        </Box>
 
-      <Box as="ul" listStyleType="none" p={0}>
-        {locations.map((location) => (
-          <Box
-            as="li"
-            key={location.id}
-            p={4}
-            borderRadius="lg"
-            bg="white"
-            boxShadow="base"
-            mb={3}
-          >
-            <Flex justify="space-between" align="center">
-              <Flex align="center" gap={4}>
-                <Box
-                  w="20px"
-                  h="20px"
-                  borderRadius="full"
-                  bg={location.color}
-                  border="2px solid"
-                  borderColor="gray.200"
-                />
-                <VStack align="start">
-                  <Text fontWeight="bold">{location.name}</Text>
-                  {selectedLocation === location.id && (
-                    <Text fontSize="sm" color="gray.500">
-                      {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-                    </Text>
-                  )}
-                </VStack>
-              </Flex>
-              <Flex gap={2}>
-                <Button
-                  onClick={() => router.push(`/edit-locations/${location.id}`)}
-                  variant="ghost"
-                >
-                  Düzenle
-                </Button>
-                <IconButton
-                  aria-label="Konumu sil"
-                  icon={<DeleteIcon />}
-                  colorScheme="red"
-                  variant="ghost"
-                  onClick={() => handleDelete(location.id)}
-                />
-              </Flex>
-            </Flex>
-          </Box>
-        ))}
-      </Box>
+        <Button
+          leftIcon={<FaPlus />}
+          colorScheme="blue"
+          size="lg"
+          onClick={() => router.push('/add-location')}
+        >
+          Yeni Konum Ekle
+        </Button>
+
+        {locations.length === 0 ? (
+          <Card bg={cardBg} borderRadius="xl" boxShadow="xl">
+            <CardBody textAlign="center" py={10}>
+              <Text color="gray.500" fontSize="lg">
+                Henüz hiç konum eklenmemiş
+              </Text>
+            </CardBody>
+          </Card>
+        ) : (
+          <VStack spacing={4} align="stretch">
+            {locations.map((location) => (
+              <Card
+                key={location.id}
+                bg={cardBg}
+                borderRadius="xl"
+                boxShadow="xl"
+                overflow="hidden"
+                transition="all 0.2s"
+                _hover={{ transform: 'translateY(-2px)', boxShadow: '2xl' }}
+              >
+                <CardBody>
+                  <HStack justify="space-between" align="center">
+                    <Box>
+                      <Heading size="md" mb={1}>
+                        {location.name}
+                      </Heading>
+                      <Text color="gray.500" fontSize="sm">
+                        {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                      </Text>
+                    </Box>
+                    <HStack spacing={2}>
+                      <IconButton
+                        aria-label="Düzenle"
+                        icon={<FaEdit />}
+                        colorScheme="blue"
+                        variant="ghost"
+                        onClick={() => router.push(`/edit-locations/${location.id}`)}
+                      />
+                      <IconButton
+                        aria-label="Sil"
+                        icon={<FaTrash />}
+                        colorScheme="red"
+                        variant="ghost"
+                        onClick={() => openDeleteDialog(location.id)}
+                      />
+                    </HStack>
+                  </HStack>
+                </CardBody>
+              </Card>
+            ))}
+          </VStack>
+        )}
+      </VStack>
 
       <AlertDialog
-        isOpen={isOpen}
+        isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}
-        onClose={onClose}
+        onClose={closeDeleteDialog}
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
@@ -126,7 +160,7 @@ export default function Locations() {
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
+              <Button ref={cancelRef} onClick={closeDeleteDialog}>
                 İptal
               </Button>
               <Button colorScheme="red" onClick={confirmDelete} ml={3}>
