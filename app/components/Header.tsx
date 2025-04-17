@@ -1,8 +1,8 @@
 'use client'
 
 import { Box, Flex, IconButton, useColorModeValue } from '@chakra-ui/react'
-import { HamburgerIcon } from '@chakra-ui/icons'
 import Link from 'next/link'
+import { FaHome } from 'react-icons/fa'
 
 export default function Header() {
   const bgColor = useColorModeValue('white', 'gray.800')
@@ -15,24 +15,24 @@ export default function Header() {
       top={0}
       left={0}
       right={0}
-      zIndex={10}
+      zIndex={1000}
       bg={bgColor}
       borderBottom="1px"
       borderColor={borderColor}
-      shadow="sm"
+      boxShadow="sm"
     >
       <Flex
         maxW="container.xl"
         mx="auto"
+        h="60px"
         px={4}
-        py={3}
         align="center"
         justify="space-between"
       >
         <Link href="/">
           <IconButton
             aria-label="Ana sayfaya dön"
-            icon={<HamburgerIcon />}
+            icon={<FaHome />}
             variant="ghost"
             colorScheme="blue"
             size="lg"

@@ -12,13 +12,14 @@ import {
   Button,
   VStack,
   useToast,
+  useBreakpointValue,
 } from '@chakra-ui/react'
 import { useLocationStore } from '../store/useLocationStore'
 import { useGoogleMaps } from '../providers/GoogleMapsProvider'
 
 const containerStyle = {
   width: '100%',
-  height: '400px',
+  height: '100%',
 }
 
 // Haversine formülü ile iki nokta arasındaki mesafeyi hesaplar (km cinsinden)
@@ -38,6 +39,7 @@ export default function Route() {
   const { locations } = useLocationStore()
   const { isLoaded, error, retry } = useGoogleMaps()
   const toast = useToast()
+  const mapHeight = useBreakpointValue({ base: '300px', md: '400px', lg: '500px' })
   const [userLocation, setUserLocation] = useState<{
     lat: number
     lng: number
@@ -118,15 +120,15 @@ export default function Route() {
   }
 
   return (
-    <Container maxW="container.xl" py={10}>
-      <Heading as="h1" size="xl" mb={6}>
+    <Container maxW="container.xl" py={4}>
+      <Heading as="h1" size="xl" mb={4}>
         Rota
       </Heading>
 
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={4} align="stretch">
         {error && (
           <Box
-            p={6}
+            p={4}
             borderRadius="lg"
             bg={useColorModeValue('red.50', 'red.900')}
             textAlign="center"
@@ -152,7 +154,7 @@ export default function Route() {
           boxShadow="base"
           bg={useColorModeValue('white', 'gray.700')}
           position="relative"
-          minH="400px"
+          height={mapHeight}
         >
           {!isLoaded && !error && (
             <Box
@@ -252,7 +254,7 @@ export default function Route() {
         </Box>
 
         <Box
-          p={6}
+          p={4}
           borderRadius="lg"
           bg={useColorModeValue('white', 'gray.700')}
           boxShadow="base"

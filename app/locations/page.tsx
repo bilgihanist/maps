@@ -49,7 +49,7 @@ export default function Locations() {
   return (
     <Container maxW="container.xl" py={10}>
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading as="h1" size="xl">
+        <Heading as="h1" size="xl" color={'white'}>
           Konumlar
         </Heading>
         <Button

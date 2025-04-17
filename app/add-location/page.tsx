@@ -1,31 +1,41 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { GoogleMap, Marker } from '@react-google-maps/api'
+import { useLocationStore } from '../store/useLocationStore'
 import {
   Box,
-  Container,
-  Heading,
-  useColorModeValue,
-  Text,
-  Spinner,
   Button,
-  VStack,
   FormControl,
   FormLabel,
   Input,
+  VStack,
   useToast,
+  Container,
+  Card,
+  CardBody,
+  Heading,
+  Text,
+  useColorModeValue,
+  InputGroup,
+  InputLeftElement,
+  Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from '@chakra-ui/react'
-import { useLocationStore } from '../store/useLocationStore'
-import { useRouter } from 'next/navigation'
+import { FaMapMarkerAlt, FaTag } from 'react-icons/fa'
 import { useGoogleMaps } from '../providers/GoogleMapsProvider'
 
 const containerStyle = {
   width: '100%',
   height: '400px',
+  borderRadius: '12px',
 }
 
-const defaultCenter = {
+const center = {
   lat: 41.0082,
   lng: 28.9784,
 }
@@ -34,174 +44,211 @@ export default function AddLocation() {
   const router = useRouter()
   const toast = useToast()
   const { addLocation } = useLocationStore()
-  const { isLoaded, error, retry } = useGoogleMaps()
-  const [location, setLocation] = useState<{
-    name: string
-    lat: number | null
-    lng: number | null
-    color: string
-  }>({
-    name: '',
-    lat: null,
-    lng: null,
-    color: '#FF0000',
-  })
+  const { isLoaded, error } = useGoogleMaps()
+  const [selectedLocation, setSelectedLocation] = useState<google.maps.LatLngLiteral | null>(null)
+  const [name, setName] = useState('')
+  const [color, setColor] = useState('#FF0000')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const cardBg = useColorModeValue('white', 'gray.800')
+  const borderColor = useColorModeValue('gray.200', 'gray.700')
 
   const handleMapClick = (e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
-      setLocation((prev) => ({
-        ...prev,
-        lat: e.latLng!.lat(),
-        lng: e.latLng!.lng(),
-      }))
+      setSelectedLocation({
+        lat: e.latLng.lat(),
+        lng: e.latLng.lng(),
+      })
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (location.name && location.color && location.lat && location.lng) {
-      addLocation({
-        name: location.name,
-        lat: location.lat,
-        lng: location.lng,
-        color: location.color,
+    if (!selectedLocation || !name || !color) {
+      toast({
+        title: 'Hata',
+        description: 'Lütfen tüm alanları doldurun',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await addLocation({
+        name,
+        lat: selectedLocation.lat,
+        lng: selectedLocation.lng,
+        color,
       })
       toast({
-        title: 'Konum eklendi',
+        title: 'Başarılı',
+        description: 'Konum başarıyla eklendi',
         status: 'success',
         duration: 3000,
         isClosable: true,
       })
-      router.push('/locations')
+      router.push('/')
+    } catch (error) {
+      toast({
+        title: 'Hata',
+        description: 'Konum eklenirken bir hata oluştu',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
     return (
-      <Container maxW="container.xl" py={10}>
-        <Text color="red.500">
-          Google Maps API anahtarı bulunamadı. Lütfen .env.local dosyasında NEXT_PUBLIC_GOOGLE_MAPS_API_KEY değişkenini ayarlayın.
-        </Text>
+      <Container maxW="container.md" py={8}>
+        <Alert status="error" borderRadius="xl">
+          <AlertIcon />
+          <Box>
+            <AlertTitle>API Anahtarı Hatası</AlertTitle>
+            <AlertDescription>
+              Google Maps API anahtarı bulunamadı. Lütfen .env.local dosyasında NEXT_PUBLIC_GOOGLE_MAPS_API_KEY değişkenini ayarlayın.
+            </AlertDescription>
+          </Box>
+        </Alert>
       </Container>
     )
   }
 
   return (
-    <Container maxW="container.xl" py={10}>
-      <Heading as="h1" size="xl" mb={6}>
-        Yeni Konum Ekle
-      </Heading>
-
-      <VStack spacing={6} align="stretch">
-        {error && (
-          <Box
-            p={6}
-            borderRadius="lg"
-            bg={useColorModeValue('red.50', 'red.900')}
-            textAlign="center"
-            boxShadow="md"
-          >
-            <Text color="red.500" fontSize="lg" fontWeight="bold" mb={4}>
-              {error}
-            </Text>
-            <Button 
-              colorScheme="red" 
-              size="lg" 
-              onClick={retry}
-              leftIcon={<Spinner size="sm" />}
-            >
-              Haritayı Yeniden Yükle
-            </Button>
-          </Box>
-        )}
-
-        <Box
-          borderRadius="lg"
-          overflow="hidden"
-          boxShadow="base"
-          bg={useColorModeValue('white', 'gray.700')}
-          position="relative"
-          minH="400px"
-        >
-          {!isLoaded && !error && (
-            <Box
-              position="absolute"
-              top="50%"
-              left="50%"
-              transform="translate(-50%, -50%)"
-              zIndex={1}
-              textAlign="center"
-            >
-              <Spinner size="xl" color="blue.500" mb={4} />
-              <Text fontSize="lg" fontWeight="medium">Harita yükleniyor...</Text>
+    <Container maxW="container.md" py={8}>
+      <Card
+        bg={cardBg}
+        borderRadius="xl"
+        boxShadow="xl"
+        overflow="hidden"
+        transition="all 0.2s"
+        _hover={{ transform: 'translateY(-2px)', boxShadow: '2xl' }}
+      >
+        <CardBody>
+          <VStack spacing={6} align="stretch">
+            <Box textAlign="center">
+              <Heading size="lg" mb={2}>Yeni Konum Ekle</Heading>
+              <Text color="gray.500">Haritadan bir konum seçin ve detaylarını girin</Text>
             </Box>
-          )}
 
-          {isLoaded && (
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={defaultCenter}
-              zoom={10}
-              onClick={handleMapClick}
-            >
-              {location.lat && location.lng && (
-                <Marker
-                  position={{ lat: location.lat, lng: location.lng }}
-                  icon={{
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 10,
-                    fillColor: location.color,
-                    fillOpacity: 1,
-                    strokeWeight: 2,
-                    strokeColor: '#000000',
-                  }}
-                />
-              )}
-            </GoogleMap>
-          )}
-        </Box>
+            {error ? (
+              <Alert status="error" borderRadius="xl">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle>Harita Hatası</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Box>
+                <Button
+                  ml="auto"
+                  size="sm"
+                  colorScheme="red"
+                  variant="ghost"
+                  onClick={() => window.location.reload()}
+                >
+                  Yeniden Dene
+                </Button>
+              </Alert>
+            ) : !isLoaded ? (
+              <Box
+                borderRadius="xl"
+                overflow="hidden"
+                boxShadow="md"
+                transition="all 0.2s"
+                _hover={{ boxShadow: 'lg' }}
+                position="relative"
+                height="400px"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Spinner size="xl" color="blue.500" />
+              </Box>
+            ) : (
+              <Box
+                borderRadius="xl"
+                overflow="hidden"
+                boxShadow="md"
+                transition="all 0.2s"
+                _hover={{ boxShadow: 'lg' }}
+                position="relative"
+              >
+                <GoogleMap
+                  mapContainerStyle={containerStyle}
+                  center={center}
+                  zoom={13}
+                  onClick={handleMapClick}
+                >
+                  {selectedLocation && (
+                    <Marker
+                      position={selectedLocation}
+                      icon={{
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 10,
+                        fillColor: color,
+                        fillOpacity: 1,
+                        strokeColor: 'white',
+                        strokeWeight: 2,
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              </Box>
+            )}
 
-        <Box
-          as="form"
-          onSubmit={handleSubmit}
-          p={6}
-          borderRadius="lg"
-          bg={useColorModeValue('white', 'gray.700')}
-          boxShadow="base"
-        >
-          <VStack spacing={4}>
-            <FormControl isRequired>
-              <FormLabel>Konum Adı</FormLabel>
-              <Input
-                value={location.name}
-                onChange={(e) =>
-                  setLocation((prev) => ({ ...prev, name: e.target.value }))
-                }
-              />
-            </FormControl>
+            <form onSubmit={handleSubmit}>
+              <VStack spacing={4}>
+                <FormControl isRequired>
+                  <FormLabel>Konum Adı</FormLabel>
+                  <InputGroup>
+                    <InputLeftElement pointerEvents="none">
+                      <FaMapMarkerAlt color="gray.300" />
+                    </InputLeftElement>
+                    <Input
+                      placeholder="Konum adını girin"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </InputGroup>
+                </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel>Renk</FormLabel>
-              <Input
-                type="color"
-                value={location.color}
-                onChange={(e) =>
-                  setLocation((prev) => ({ ...prev, color: e.target.value }))
-                }
-              />
-            </FormControl>
+                <FormControl isRequired>
+                  <FormLabel>İşaretçi Rengi</FormLabel>
+                  <InputGroup>
+                    <InputLeftElement pointerEvents="none">
+                      <FaTag color="gray.300" />
+                    </InputLeftElement>
+                    <Input
+                      type="color"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      p={1}
+                      h="40px"
+                    />
+                  </InputGroup>
+                </FormControl>
 
-            <Button 
-              type="submit" 
-              colorScheme="blue" 
-              width="full"
-              isDisabled={!location.lat || !location.lng}
-            >
-              Ekle
-            </Button>
+                <Button
+                  type="submit"
+                  colorScheme="blue"
+                  size="lg"
+                  width="full"
+                  isLoading={isSubmitting}
+                  loadingText="Ekleniyor..."
+                  isDisabled={!selectedLocation || !isLoaded || !!error}
+                >
+                  Konumu Ekle
+                </Button>
+              </VStack>
+            </form>
           </VStack>
-        </Box>
-      </VStack>
+        </CardBody>
+      </Card>
     </Container>
   )
 } 

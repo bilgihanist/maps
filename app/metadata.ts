@@ -1,11 +1,8 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: {
-    default: 'Harita Uygulaması',
-    template: '%s | Harita Uygulaması'
-  },
-  description: 'Konum yönetimi ve rota planlama uygulaması',
+  title: 'Seyahat Takip',
+  description: 'Konumlarınızı takip edin, rotalarınızı planlayın',
   icons: {
     icon: '/favicon.ico',
   },
