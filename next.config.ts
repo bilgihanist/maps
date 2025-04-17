@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  compiler: {
+    emotion: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  transpilePackages: ['@chakra-ui/react', '@chakra-ui/icons'],
+}
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
+module.exports = nextConfig
