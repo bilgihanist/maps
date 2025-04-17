@@ -6,6 +6,7 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import './globals.css'
 import { Box } from '@chakra-ui/react'
+import { GoogleMapsProvider } from './providers/GoogleMapsProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,16 +19,18 @@ export default function RootLayout({
     <html lang="tr">
       <body className={inter.className}>
         <Providers>
-          <Header />
-          <Box
-            as="main"
-            pt="60px" // Header yüksekliği
-            pb="60px" // Footer yüksekliği
-            minH="100vh"
-          >
-            {children}
-          </Box>
-          <Footer />
+          <GoogleMapsProvider>
+            <Header />
+            <Box
+              as="main"
+              pt="60px" // Header yüksekliği
+              pb="60px" // Footer yüksekliği
+              minH="100vh"
+            >
+              {children}
+            </Box>
+            <Footer />
+          </GoogleMapsProvider>
         </Providers>
       </body>
     </html>

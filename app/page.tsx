@@ -1,72 +1,60 @@
 'use client'
 
-import { Box, Container, Heading, SimpleGrid, Text } from '@chakra-ui/react'
-import Link from 'next/link'
+import { Box, Container, Heading, Text, VStack, Button, useColorModeValue } from '@chakra-ui/react'
+import { useLocationStore } from './store/useLocationStore'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+  const locations = useLocationStore((state) => state.locations)
+  const router = useRouter()
+
   return (
     <Container maxW="container.xl" py={10}>
-      <Heading as="h1" size="2xl" textAlign="center" mb={10}>
-        Harita Uygulaması
+      <Heading as="h1" size="xl" mb={6}>
+        Konum Yönetimi
       </Heading>
-      
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={6}>
-        <Link href="/add-location">
-          <Box
-            p={6}
-            borderWidth="1px"
-            borderRadius="lg"
-            _hover={{ bg: 'gray.50', cursor: 'pointer' }}
-          >
-            <Heading as="h2" size="md" mb={2}>
-              Konum Ekle
-            </Heading>
-            <Text>Haritadan yeni konum ekleyin</Text>
-          </Box>
-        </Link>
 
-        <Link href="/locations">
-          <Box
-            p={6}
-            borderWidth="1px"
-            borderRadius="lg"
-            _hover={{ bg: 'gray.50', cursor: 'pointer' }}
+      <VStack spacing={6} align="stretch">
+        <Box
+          p={6}
+          borderRadius="lg"
+          bg={useColorModeValue('white', 'gray.700')}
+          boxShadow="base"
+        >
+          <Text mb={4}>
+            {locations.length > 0
+              ? `${locations.length} konum bulunuyor.`
+              : 'Henüz konum eklenmemiş.'}
+          </Text>
+          <Button
+            colorScheme="blue"
+            onClick={() => router.push('/add-location')}
+            width="full"
+            mb={4}
           >
-            <Heading as="h2" size="md" mb={2}>
+            Yeni Konum Ekle
+          </Button>
+          {locations.length > 0 && (
+            <Button
+              colorScheme="teal"
+              onClick={() => router.push('/locations')}
+              width="full"
+            >
               Konumları Listele
-            </Heading>
-            <Text>Kaydedilmiş konumları görüntüleyin</Text>
-          </Box>
-        </Link>
+            </Button>
+          )}
+        </Box>
 
-        <Link href="/edit-locations">
-          <Box
-            p={6}
-            borderWidth="1px"
-            borderRadius="lg"
-            _hover={{ bg: 'gray.50', cursor: 'pointer' }}
+        {locations.length > 0 && (
+          <Button
+            colorScheme="green"
+            onClick={() => router.push('/route')}
+            width="full"
           >
-            <Heading as="h2" size="md" mb={2}>
-              Konumları Düzenle
-            </Heading>
-            <Text>Konum bilgilerini güncelleyin</Text>
-          </Box>
-        </Link>
-
-        <Link href="/route">
-          <Box
-            p={6}
-            borderWidth="1px"
-            borderRadius="lg"
-            _hover={{ bg: 'gray.50', cursor: 'pointer' }}
-          >
-            <Heading as="h2" size="md" mb={2}>
-              Rota Oluştur
-            </Heading>
-            <Text>Konumlar arası rota planlayın</Text>
-          </Box>
-        </Link>
-      </SimpleGrid>
+            Rotayı Görüntüle
+          </Button>
+        )}
+      </VStack>
     </Container>
   )
 }
