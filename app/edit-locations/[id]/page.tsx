@@ -56,7 +56,7 @@ export default function EditLocation({ params }: { params: { id: string } }) {
     const location = locations.find((loc) => loc.id === params.id)
     if (location) {
       setName(location.name)
-      setColor(location.color)
+      setColor(location.color || '#FF0000')
       setSelectedLocation({
         lat: location.lat,
         lng: location.lng,

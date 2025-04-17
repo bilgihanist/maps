@@ -133,7 +133,7 @@ export default function AddLocation() {
           <VStack spacing={6} align="stretch">
             <Box textAlign="center">
               <Heading size="lg" mb={2}>Yeni Konum Ekle</Heading>
-              <Text color="gray.500">Haritadan bir konum seçin ve detaylarını girin</Text>
+              <Text color="black">Haritadan bir konum seçin ve detaylarını girin</Text>
             </Box>
 
             {error ? (

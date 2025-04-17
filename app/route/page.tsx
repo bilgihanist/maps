@@ -83,6 +83,7 @@ export default function Route() {
       // Kullanıcının konumundan her bir noktaya olan mesafeyi hesapla
       const distances = locations.map(loc => ({
         ...loc,
+        color: loc.color || '#FF0000',
         distance: calculateDistance(
           userLocation.lat,
           userLocation.lng,
@@ -121,7 +122,7 @@ export default function Route() {
 
   return (
     <Container maxW="container.xl" py={4}>
-      <Heading as="h1" size="xl" mb={4}>
+      <Heading as="h1" size="xl" color={'white'} mb={4}>
         Rota
       </Heading>
 
@@ -201,7 +202,7 @@ export default function Route() {
                   icon={{
                     path: google.maps.SymbolPath.CIRCLE,
                     scale: 10,
-                    fillColor: location.color,
+                    fillColor: location.color || '#FFFFFF',
                     fillOpacity: 1,
                     strokeWeight: 2,
                     strokeColor: '#000000',

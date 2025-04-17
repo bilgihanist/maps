@@ -77,8 +77,8 @@ export default function Locations() {
     <Container maxW="container.md" py={8}>
       <VStack spacing={6} align="stretch">
         <Box textAlign="center">
-          <Heading size="lg" mb={2}>Konumlar</Heading>
-          <Text color="gray.500">Tüm konumlarınızı buradan yönetebilirsiniz</Text>
+          <Heading size="lg" color={'white'} mb={2}>Konumlar</Heading>
+          <Text color="white">Tüm konumlarınızı buradan yönetebilirsiniz</Text>
         </Box>
 
         <Button
