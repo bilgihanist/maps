@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { GoogleMap, Marker } from '@react-google-maps/api'
 import { useLocationStore } from '../../store/useLocationStore'
@@ -28,6 +28,7 @@ import {
 } from '@chakra-ui/react'
 import { FaMapMarkerAlt, FaTag } from 'react-icons/fa'
 import { useGoogleMaps } from '../../providers/GoogleMapsProvider'
+import { Location } from '../../store/useLocationStore'
 
 const containerStyle = {
   width: '100%',
@@ -49,12 +50,15 @@ export default function EditLocation({ params }: { params: { id: string } }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState('#FF0000')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null)
 
   const cardBg = useColorModeValue('white', 'gray.800')
 
+  // Mevcut konumu bul
   useEffect(() => {
     const location = locations.find((loc) => loc.id === params.id)
     if (location) {
+      setCurrentLocation(location)
       setName(location.name)
       setColor(location.color || '#FF0000')
       setSelectedLocation({
@@ -73,16 +77,18 @@ export default function EditLocation({ params }: { params: { id: string } }) {
     }
   }, [locations, params.id, router, toast])
 
-  const handleMapClick = (e: google.maps.MapMouseEvent) => {
+  // Harita tıklama işleyicisi
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
       setSelectedLocation({
         lat: e.latLng.lat(),
         lng: e.latLng.lng(),
       })
     }
-  }
+  }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Form gönderme işleyicisi
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedLocation || !name || !color) {
       toast({
@@ -122,7 +128,7 @@ export default function EditLocation({ params }: { params: { id: string } }) {
     } finally {
       setIsSubmitting(false)
     }
-  }
+  }, [selectedLocation, name, color, params.id, updateLocation, router, toast])
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
     return (

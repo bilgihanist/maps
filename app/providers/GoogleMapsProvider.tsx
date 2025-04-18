@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { LoadScript } from '@react-google-maps/api'
 
 interface GoogleMapsContextType {
@@ -14,12 +14,14 @@ const GoogleMapsContext = createContext<GoogleMapsContextType | null>(null)
 export function GoogleMapsProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     setIsLoaded(false)
     setError(null)
+    setRetryCount(prev => prev + 1)
     window.location.reload()
-  }
+  }, [])
 
   useEffect(() => {
     const checkGoogleMaps = () => {
@@ -43,7 +45,7 @@ export function GoogleMapsProvider({ children }: { children: ReactNode }) {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [retryCount])
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
     return (

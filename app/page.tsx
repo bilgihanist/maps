@@ -6,53 +6,33 @@ import { useLocationStore } from './store/useLocationStore';
 import Link from 'next/link';
 import { BsGeoAlt } from "react-icons/bs";
 import { FaRoute } from "react-icons/fa";
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AddIcon, ViewIcon, TimeIcon, StarIcon } from "@chakra-ui/icons";
-
-const calculateTotalDistance = (locations: any[]) => {
-  if (locations.length < 2) return 0;
-  
-  let totalDistance = 0;
-  for (let i = 0; i < locations.length - 1; i++) {
-    const loc1 = locations[i];
-    const loc2 = locations[i + 1];
-    
-    // Haversine formülü ile iki nokta arası mesafe hesaplama
-    const R = 6371; // Dünya'nın yarıçapı (km)
-    const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
-    const dLon = (loc2.lng - loc1.lng) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c;
-    
-    totalDistance += distance;
-  }
-  
-  return Math.round(totalDistance);
-};
-
-const getDistanceIcon = (distance: number) => {
-  if (distance > 1000) return FaPlane;
-  if (distance > 100) return FaCar;
-  return FaWalking;
-};
-
-const getDistanceText = (distance: number) => {
-  if (distance > 1000) return 'Uçakla seyahat edilebilecek mesafe';
-  if (distance > 100) return 'Araçla seyahat edilebilecek mesafe';
-  return 'Yürüyerek kat edilebilecek mesafe';
-};
+import { calculateTotalDistance, getDistanceIcon, getDistanceText } from './utils/distance';
+import { Location } from './store/useLocationStore';
 
 export default function Home() {
   // Store'dan locations'ı doğrudan alıyoruz
   const locations = useLocationStore((state) => state.locations);
   const totalLocations = locations.length;
-  const recentLocations = locations.slice(-3);
-  const totalDistance = calculateTotalDistance(locations);
-  const DistanceIcon = getDistanceIcon(totalDistance);
+  
+  // Son eklenen konumları al
+  const recentLocations = useMemo(() => locations.slice(-3), [locations]);
+  
+  // Toplam mesafeyi hesapla
+  const totalDistance = useMemo(() => calculateTotalDistance(locations), [locations]);
+  
+  // Mesafe ikonunu belirle
+  const distanceIconType = useMemo(() => getDistanceIcon(totalDistance), [totalDistance]);
+  
+  // Mesafe ikonunu seç
+  const DistanceIcon = useMemo(() => {
+    switch (distanceIconType) {
+      case 'plane': return FaPlane;
+      case 'car': return FaCar;
+      default: return FaWalking;
+    }
+  }, [distanceIconType]);
 
   // Store'daki değişiklikleri izliyoruz
   useEffect(() => {
@@ -199,5 +179,5 @@ export default function Home() {
         </CardBody>
       </Card>
     </Container>
-  )
+  );
 }

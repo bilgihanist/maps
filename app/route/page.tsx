@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { GoogleMap, Marker, Polyline, InfoWindow } from '@react-google-maps/api'
 import {
   Box,
@@ -16,23 +16,17 @@ import {
 } from '@chakra-ui/react'
 import { useLocationStore } from '../store/useLocationStore'
 import { useGoogleMaps } from '../providers/GoogleMapsProvider'
+import { calculateDistance } from '../utils/distance'
+import { Location } from '../store/useLocationStore'
+
+// Location tipine distance özelliği ekleyen genişletilmiş tip
+interface LocationWithDistance extends Location {
+  distance: number;
+}
 
 const containerStyle = {
   width: '100%',
   height: '100%',
-}
-
-// Haversine formülü ile iki nokta arasındaki mesafeyi hesaplar (km cinsinden)
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371 // Dünya'nın yarıçapı (km)
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLon = (lon2 - lon1) * Math.PI / 180
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-  return R * c
 }
 
 export default function Route() {
@@ -44,7 +38,7 @@ export default function Route() {
     lat: number
     lng: number
   } | null>(null)
-  const [sortedLocations, setSortedLocations] = useState<typeof locations>([])
+  const [sortedLocations, setSortedLocations] = useState<LocationWithDistance[]>([])
   const [totalDistance, setTotalDistance] = useState<number>(0)
   const [selectedLocation, setSelectedLocation] = useState<{
     id: string
@@ -55,6 +49,7 @@ export default function Route() {
     distance: number
   } | null>(null)
 
+  // Kullanıcı konumunu al
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -78,19 +73,35 @@ export default function Route() {
     }
   }, [toast])
 
+  // Konum seçme işleyicisi
+  const handleLocationClick = useCallback((location: LocationWithDistance) => {
+    setSelectedLocation({
+      id: location.id,
+      name: location.name,
+      lat: location.lat,
+      lng: location.lng,
+      color: location.color || '#FF0000',
+      distance: location.distance
+    })
+  }, [])
+
+  // Konumları sırala ve mesafeleri hesapla
   useEffect(() => {
     if (userLocation && locations.length > 0) {
       // Kullanıcının konumundan her bir noktaya olan mesafeyi hesapla
-      const distances = locations.map(loc => ({
-        ...loc,
-        color: loc.color || '#FF0000',
-        distance: calculateDistance(
+      const distances = locations.map(loc => {
+        const distance = calculateDistance(
           userLocation.lat,
           userLocation.lng,
           loc.lat,
           loc.lng
-        )
-      }))
+        );
+        return {
+          ...loc,
+          color: loc.color || '#FF0000',
+          distance
+        } as LocationWithDistance;
+      });
 
       // En yakın noktadan başlayarak sırala
       const sorted = [...distances].sort((a, b) => a.distance - b.distance)
@@ -202,7 +213,7 @@ export default function Route() {
                   icon={{
                     path: google.maps.SymbolPath.CIRCLE,
                     scale: 10,
-                    fillColor: location.color || '#FFFFFF',
+                    fillColor: location.color || '#FF0000',
                     fillOpacity: 1,
                     strokeWeight: 2,
                     strokeColor: '#000000',
@@ -211,15 +222,7 @@ export default function Route() {
                     text: `${index + 1}`,
                     color: '#FFFFFF',
                   }}
-                  onClick={() => setSelectedLocation({
-                    ...location,
-                    distance: calculateDistance(
-                      userLocation?.lat || 0,
-                      userLocation?.lng || 0,
-                      location.lat,
-                      location.lng
-                    )
-                  })}
+                  onClick={() => handleLocationClick(location)}
                 />
               ))}
 
